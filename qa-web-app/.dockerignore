@@ -1,0 +1,35 @@
+# VCS / editor state
+.git
+.gitignore
+.DS_Store
+*.log
+
+# Python build/runtime noise
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Frontend build/runtime noise
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Local env/secrets and mutable runtime data
+.env
+.env.*
+!.env.example
+volume/config/app.env
+volume/config/*.env
+volume/config/settings.json
+volume/config/ssh_key
+volume/config/ssh_key*
+volume/reports/
+volume/cache/
+
+# Agent/local metadata not needed in container image
+.claude/

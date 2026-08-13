@@ -1,0 +1,14 @@
+{
+  "client_id": "130485",
+  "project_id": "309102",
+  "project_name": null,
+  "ssh_key_path": "/app/volume/config/ssh_key",
+  "ssh_key_name": "qa-chk-bare",
+  "image_name": "ubuntu-22.04-x64-ironic",
+  "reports_dir": "/app/volume/reports",
+  "run_defaults": {
+    "region_id": null,
+    "servers_count": 1,
+    "flavor_id": null
+  }
+}

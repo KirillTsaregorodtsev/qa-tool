@@ -1,0 +1,42 @@
+services:
+  qa-web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qa-web-app:local
+    init: true
+    restart: "no"
+    ports:
+      - "127.0.0.1:${QA_WEB_APP_PORT:-8080}:8080"
+    environment:
+      CLOUD_API_KEY: ${CLOUD_API_KEY:?Set CLOUD_API_KEY in your shell or pass --env-file volume/config/app.env}
+      PROD_API_KEY: ${PROD_API_KEY:-}
+      CONFIG_DIR: /app/volume/config
+      REPORTS_DIR: /app/volume/reports
+      SSH_KEY_PATH: /app/volume/config/ssh_key
+      MAX_WORKERS: ${MAX_WORKERS:-5}
+      CLIENT_ID: ${CLIENT_ID:-130485}
+      PROJECT_ID: ${PROJECT_ID:-309102}
+      PROJECT_NAME: ${PROJECT_NAME:-}
+      SSH_KEY_NAME: ${SSH_KEY_NAME:-qa-chk-bare}
+      IMAGE_NAME: ${IMAGE_NAME:-ubuntu-22.04-x64-ironic}
+      BASE_URL: ${BASE_URL:-https://api.gcore.com}
+    volumes:
+      - type: bind
+        source: ./volume
+        target: /app/volume
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import json, urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=3); data=json.loads(r.read()); raise SystemExit(0 if data.get('status') == 'ok' else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp

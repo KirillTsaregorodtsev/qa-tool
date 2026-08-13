@@ -1,0 +1,9 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+gcore==0.31.0
+pydantic==2.11.4
+python-dotenv==1.1.0
+paramiko==3.5.1
+anyio==4.9.0
+httpx==0.28.1
+requests==2.32.3
