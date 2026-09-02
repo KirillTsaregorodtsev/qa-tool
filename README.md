@@ -1,7 +1,7 @@
 # QA Web App
 
 Local web UI for Gcore cloud QA workflows. FastAPI backend + React/Vite frontend,
-localhost-only, no auth required.
+localhost-only.
 
 ---
 
@@ -38,7 +38,6 @@ Edit `volume/config/settings.json` to set your `project_id`, `ssh_key_name`, etc
 ### 3. Create the secrets env-file
 
 ```bash
-# volume/config/app.env is gitignored — safe to store secrets here
 printf 'CLOUD_API_KEY=replace-with-your-gcore-token\n' > volume/config/app.env
 ```
 
@@ -62,7 +61,6 @@ expected name — the original key is not renamed or modified; a copy is saved a
 Notes:
 - Use the **private** key (the file *without* `.pub`), unencrypted (no passphrase).
 - It must match the Gcore SSH key registered under `ssh_key_name` (default `qa-ssh-keyname-example`).
-- `ssh_key` is gitignored; never commit it.
 - Advanced: to load the key from a different path, set `SSH_KEY_PATH` (see Environment variables).
 - Not needed to just start the UI / browse Regions & Quotas — only for actual runs.
 
