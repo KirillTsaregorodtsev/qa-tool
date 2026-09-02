@@ -1,10 +1,10 @@
 {
-  "client_id": "130485",
-  "project_id": "309102",
+  "client_id": "YOUR_CLIENT_ID",
+  "project_id": "YOUR_PROJECT_ID",
   "project_name": null,
   "ssh_key_path": "/app/volume/config/ssh_key",
-  "ssh_key_name": "qa-chk-bare",
-  "image_name": "ubuntu-22.04-x64-ironic",
+  "ssh_key_name": "qa-ssh-keyname-example",
+  "image_name": "ubuntu-26.04-x64-ironic",
   "reports_dir": "/app/volume/reports",
   "run_defaults": {
     "region_id": null,

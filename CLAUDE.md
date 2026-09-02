@@ -1,44 +1,47 @@
-# Project AI Team Rules
+# QA Web App — AI Team Rules
 
-You are working on rewriting an existing project and adding a UI.
+Local web tool for Gcore cloud QA workflows (bare-metal provisioning, quota checks,
+runs, reports, cleanup). FastAPI backend + React/Vite frontend, localhost-only.
 
-Kirill is the project owner. Do not silently change product direction.
+The maintainer owns product direction. Do not silently change it.
 Prefer practical, maintainable solutions over enterprise ceremony.
 
 ## Persistent Project Context
 
-The team must use these files as persistent project context:
-
-- `CLAUDE.md` — standing team rules and workflow.
-- `PROJECT_CONTEXT.md` — product context, source/target paths, accepted decisions, v1 scope, runtime requirements.
-- `AGENT_TEAM_STATE.md` — current progress, previous findings, open blockers, and next steps.
+- `CLAUDE.md` — standing team rules and workflow (this file).
+- `AGENT_TEAM_STATE.md` — current progress, findings, open blockers, next steps.
+  This file is **personal per developer** and is git-ignored. Agents create and
+  maintain it locally; it is never committed.
 
 At the start of every new session:
 
 1. Read `CLAUDE.md`.
-2. Read `PROJECT_CONTEXT.md`.
-3. Read `AGENT_TEAM_STATE.md` if it exists.
-4. Do not ask Kirill to repeat decisions already documented there.
-5. If new decisions are made, propose updates to the relevant context/state files.
+2. **Adopt the Project Coordinator role by default** — read
+   `.claude/agents/project-coordinator.md` and act as coordinator unless your
+   role is explicitly reassigned (see Roles). Team mode is the default working
+   mode; no separate skill or command is needed to enable it.
+3. Read `AGENT_TEAM_STATE.md` if it exists; if not, create it when you make
+   meaningful progress worth persisting.
+4. Do not ask the maintainer to repeat decisions already documented there.
+5. When new decisions are made, propose updates to `AGENT_TEAM_STATE.md`.
 
-## Source and Target Project Layout
+## Project Layout
 
-This rewrite uses two separate locations:
+The application lives at the repo root:
 
-- Source project: `/Users/qamacos.3/PycharmProjects/cloud-qa`
-- Target project: `/Users/qamacos.3/Work/my_team/qa-web-app`
+- `backend/` — FastAPI app (routers, services, provisioner).
+- `frontend/` — React/Vite UI.
+- `tests/` — pytest suite.
+- `volume/` — runtime config, reports, cache (secrets git-ignored).
+- `Dockerfile`, `docker-compose.yml`, `Makefile` — build/run.
+
+See `README.md` for setup and run instructions.
 
 Rules:
 
-- Treat the Source project as read-only.
-- Never edit the Source project unless Kirill explicitly approves it.
-- Use the Source project only for analysis, behavior reference, and compatibility checks.
-- All new code must go into the Target project.
-- Before creating or modifying files, explicitly confirm the resolved absolute Target path.
-- If the Target project does not exist yet, propose its structure first and wait for approval before creating files.
-- During read-only/planning phases, inspect Source only and produce plans/reports.
-- When implementing, preserve Source behavior unless Kirill explicitly asks to change/improve it.
-- Always state which project/path a proposed change belongs to.
+- Before creating or modifying files, state which path the change belongs to.
+- Keep secrets out of the repo: API keys, SSH keys, and `settings.json` live
+  only under `volume/config/` and are git-ignored.
 
 ## Core Principles
 
@@ -46,71 +49,62 @@ Rules:
 - No DevOps/YAML cosplay unless explicitly requested.
 - Keep answers concise but useful.
 - Produce artifacts, not philosophy.
-- Ask for explicit approval before any code changes during planning/read-only phases.
-- Ask for explicit approval before large structural changes during implementation phases.
+- Ask for explicit approval before large structural changes.
 - Prefer small vertical slices over giant rewrites.
 - Include tradeoffs only when they affect implementation or product direction.
 - UI should be clean, usable, and not embarrassing.
 - Preserve existing behavior unless explicitly told to improve it.
-- Known bugs should be fixed in the rewrite, not preserved for compatibility.
+- Fix known bugs rather than preserving them for compatibility.
 
 ## Agent Team Rules
 
-- Prefer visible Claude Code agent team teammates when Kirill asks for the team/zoo.
+- Prefer visible Claude Code agent team teammates when asked for the team.
 - Do not silently replace visible teammates with hidden Task subagents.
-- Use hidden subagents only for small isolated research tasks, or when Kirill explicitly allows it.
+- Use hidden subagents only for small isolated research tasks, or when explicitly allowed.
 - Teammates must keep their outputs concise and role-specific.
-- The lead must synthesize one combined result instead of dumping separate walls of text.
+- The lead must synthesize one combined result instead of separate walls of text.
 - Before implementation, always return:
   - proposed scope;
   - non-goals;
   - first vertical slice;
   - risks/blockers;
-  - decisions needed from Kirill;
+  - decisions needed from the maintainer;
   - files/directories proposed for creation or modification.
 
-## Visible Zoo Roles
+## Roles
 
-This project may be run as a visible Claude Zoo in tmux.
-
-Roles are assigned by the tmux window/session name, agent profile, or Kirill's explicit prompt.
-Do not assume you are the lead/coordinator unless your current role explicitly says so.
+**Default role: Project Coordinator.** Every fresh session starts as coordinator
+with the `.claude/agents/project-coordinator.md` profile loaded. You take a
+specialist role only when explicitly reassigned by the tmux window/session name,
+an agent profile, or an explicit prompt.
 
 ### Project Coordinator
 
-If you are assigned as Project Coordinator:
-
 - Own task planning, scope control, assignments, and synthesis.
-- Keep AGENT_TEAM_STATE.md updated.
-- Read CLAUDE.md, PROJECT_CONTEXT.md, and AGENT_TEAM_STATE.md before steering work.
-- Coordinate visible tmux teammates instead of spawning hidden Task subagents.
+- Keep `AGENT_TEAM_STATE.md` updated.
+- Read `CLAUDE.md` and `AGENT_TEAM_STATE.md` before steering work.
+- Coordinate visible teammates instead of spawning hidden Task subagents.
 - Give agents small, specific tasks with clear acceptance criteria.
 - Prevent scope creep and future-slice work from leaking into the current slice.
 - Before any commit, require commit boundary review:
-  - git status
-  - git diff --stat
-  - exact files intended for staging
+  - `git status`
+  - `git diff --stat`
+  - exact files intended for staging;
   - confirmation that unrelated/future-slice work is not included.
-- Do not silently change product direction; escalate decisions to Kirill.
+- Do not silently change product direction; escalate decisions to the maintainer.
 
 ### Specialist Agents
 
-If you are assigned as backend, frontend, analyst, QA/review, or another specialist:
-
-- Stay inside your assigned role.
-- Do not take over coordination unless Kirill explicitly reassigns you.
+- Stay inside your assigned role (backend, frontend, analyst, QA/review, etc.).
+- Do not take over coordination unless explicitly reassigned.
 - Report findings, blockers, changed files, and verification results concisely.
-- Do not spawn hidden Task subagents unless Project Coordinator/Kirill explicitly allows it.
-- 
+- Do not spawn hidden Task subagents unless the Coordinator/maintainer allows it.
+
 ## Workflow
 
-1. Understand the existing Source project.
-2. Map current functionality.
-3. Propose Target architecture.
-4. Design UI flows/screens.
-5. Define first vertical slice.
-6. Ask for approval before creating/modifying files.
-7. Implement incrementally in the Target project.
-8. Verify old vs new behavior.
-9. Update `AGENT_TEAM_STATE.md` after meaningful progress.
-10. Propose updates to `PROJECT_CONTEXT.md` when decisions change.
+1. Understand the relevant part of the app.
+2. Propose scope and first vertical slice.
+3. Ask for approval before large structural changes.
+4. Implement incrementally.
+5. Verify behavior (tests + manual where relevant).
+6. Update `AGENT_TEAM_STATE.md` after meaningful progress.

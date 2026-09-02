@@ -1,7 +1,7 @@
 # secrets — НИКОГДА не коммитить
-**/volume/config/app.env
-**/volume/config/ssh_key
-**/volume/config/settings.json
+volume/config/app.env
+volume/config/ssh_key
+volume/config/settings.json
 
 # deps & build
 node_modules/
@@ -9,15 +9,40 @@ node_modules/
 
 # python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
 
-# runtime data
-**/volume/reports/runs/
-**/volume/cache/*
-!**/volume/cache/.gitkeep
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*~
 
-# local tooling
-.claude/settings*.json
-**/.claude/settings*.json
+# runtime data — keep the dirs (.gitkeep), ignore their contents
+volume/reports/*
+!volume/reports/.gitkeep
+volume/cache/*
+!volume/cache/.gitkeep
+
+# local tooling — personal Claude settings only; shared .claude/settings.json is committed
+.claude/settings.local.json
+.entire/
 *.backup
+tmp/
+
+# personal per-developer progress file — never committed
+AGENT_TEAM_STATE.md
+.DS_Store

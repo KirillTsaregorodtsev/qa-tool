@@ -18,8 +18,8 @@ services:
       CLIENT_ID: ${CLIENT_ID:-130485}
       PROJECT_ID: ${PROJECT_ID:-309102}
       PROJECT_NAME: ${PROJECT_NAME:-}
-      SSH_KEY_NAME: ${SSH_KEY_NAME:-qa-chk-bare}
-      IMAGE_NAME: ${IMAGE_NAME:-ubuntu-22.04-x64-ironic}
+      SSH_KEY_NAME: ${SSH_KEY_NAME:-qa-ssh-keyname-example}
+      IMAGE_NAME: ${IMAGE_NAME:-ubuntu-26.04-x64-ironic}
       BASE_URL: ${BASE_URL:-https://api.gcore.com}
     volumes:
       - type: bind

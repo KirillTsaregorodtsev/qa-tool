@@ -37,7 +37,7 @@ _DEFAULTS = {
     "client_id": "130485",
     "project_id": "309102",
     "project_name": None,
-    "ssh_key_name": "qa-chk-bare",
+    "ssh_key_name": "qa-ssh-keyname-example",
     "image_name": "ubuntu-26.04-x64-ironic",
 }
 

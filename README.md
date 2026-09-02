@@ -7,18 +7,22 @@ localhost-only, no auth required.
 
 ## Prerequisites
 
-- Docker + Docker Compose (tested with Compose v2 / `docker compose`)
-- For local dev without Docker: Python 3.12+, Node 20+
-- A Gcore API token (`CLOUD_API_KEY`)
+- Docker + Docker Compose (tested with Compose v2 / `docker compose`) — the
+  Docker path needs nothing else installed.
+- For local dev without Docker only: Python 3.12+ (backend), Node 20+ (frontend).
+- A Gcore API token (`CLOUD_API_KEY`) — needed for the Regions / Quotas / Runs screens.
+- A Gcore SSH key registered under `ssh_key_name` (default `qa-ssh-keyname-example`)
+  — needed only for actual baremetal runs, not to browse the UI.
 
 ---
 
 ## First-time setup
 
+Run all commands from the repository root.
+
 ### 1. Create runtime directories
 
 ```bash
-cd qa-web-app
 mkdir -p volume/config volume/reports volume/cache
 ```
 
@@ -43,27 +47,23 @@ This file is in `.gitignore`; never commit it.
 
 ### 4. Add the SSH private key
 
-Baremetal runs (New Run screen) need an SSH private key. Place it at:
-
-```
-volume/config/ssh_key
-```
-
-The file **must be named exactly `ssh_key`** — no extension (not `ssh_key.pem`,
-not `id_rsa`). This is the default `SSH_KEY_PATH`. If your key file has a
-different name, either rename it:
+Baremetal runs (New Run screen) need an SSH private key. Copy your key into the
+config dir under the name `ssh_key`:
 
 ```bash
 cp /path/to/your/private_key volume/config/ssh_key
 chmod 600 volume/config/ssh_key
 ```
 
-…or keep the name and point `SSH_KEY_PATH` at it (see Environment variables).
+The command above already puts the key at the expected location with the
+expected name — the original key is not renamed or modified; a copy is saved as
+`volume/config/ssh_key`.
 
 Notes:
 - Use the **private** key (the file *without* `.pub`), unencrypted (no passphrase).
-- It must match the Gcore SSH key registered under `ssh_key_name` (default `qa-chk-bare`).
+- It must match the Gcore SSH key registered under `ssh_key_name` (default `qa-ssh-keyname-example`).
 - `ssh_key` is gitignored; never commit it.
+- Advanced: to load the key from a different path, set `SSH_KEY_PATH` (see Environment variables).
 - Not needed to just start the UI / browse Regions & Quotas — only for actual runs.
 
 ---
@@ -77,7 +77,9 @@ docker compose --env-file volume/config/app.env up --build
 ```
 
 The first run builds the image (frontend + backend, ~1–2 min).
-Subsequent runs skip the build if nothing changed:
+For later starts, use `up` — it reuses the existing image without rebuilding.
+If the source code, dependencies, or `Dockerfile` changed, run `up --build`
+again to pick up the changes:
 
 ```bash
 docker compose --env-file volume/config/app.env up
@@ -89,8 +91,11 @@ Stop:
 
 ```bash
 # Ctrl-C in the foreground terminal, or in another terminal:
-docker compose down
+docker compose --env-file volume/config/app.env down
 ```
+
+Pass `--env-file` on `down` too — Compose interpolates the config (including the
+required `CLOUD_API_KEY`) on every command, and omitting it can fail the same way.
 
 Custom port (default 8080):
 
@@ -121,9 +126,9 @@ The `docker-compose.yml` in this repo is compatible with both.
 Stop:
 
 ```bash
-podman compose down
+podman compose --env-file volume/config/app.env down
 # or
-podman-compose down
+podman-compose --env-file volume/config/app.env down
 ```
 
 ### Option B — podman build + podman run
@@ -147,6 +152,8 @@ podman run --rm \
   -p 127.0.0.1:8080:8080 \
   qa-web-app
 ```
+
+For a custom host port, change the left side of `-p`, e.g. `-p 127.0.0.1:9090:8080`.
 
 Note the `:z` flag on the volume mount — required on SELinux-enabled systems (Fedora, RHEL, etc.)
 to relabel the volume so the container can access it. Omit on macOS or non-SELinux Linux.
@@ -176,22 +183,42 @@ podman stop qa-web-app
 
 ## Running without Docker (local dev / smoke)
 
-### Backend only (no API key needed for smoke)
+### 1. Install backend dependencies
 
 ```bash
-cd qa-web-app
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8080 --reload
+python -m pip install -r requirements.txt
 ```
+
+(Use a virtualenv if you prefer: `python -m venv .venv && source .venv/bin/activate`.)
+
+### 2. Point the runtime paths at the local `volume/`
+
+The path defaults are container paths (`/app/volume/...`); the backend does not
+auto-detect a local layout. For local dev, override them to the repo's `volume/`
+dir (run from the repo root):
+
+```bash
+export CONFIG_DIR="$PWD/volume/config"
+export REPORTS_DIR="$PWD/volume/reports"
+export SSH_KEY_PATH="$PWD/volume/config/ssh_key"
+```
+
+### 3. Start the backend
 
 Without `CLOUD_API_KEY` the app starts and serves the UI.
 `/api/health` returns `{"status":"ok","api_key_configured":false}`.
-Gcore-backed endpoints (regions, quotas, runs) will fail with 500 until a key is provided.
-
-With a key:
+Gcore-backed endpoints (regions, quotas, runs) fail until a key is provided.
 
 ```bash
-CLOUD_API_KEY=replace-with-your-token \
-  python -m uvicorn backend.main:app --host 127.0.0.1 --port 8080 --reload
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8080 --reload
+```
+
+With a key — load it from `app.env` rather than typing it on the command line
+(a plain `CLOUD_API_KEY=... uvicorn` leaves the token in your shell history):
+
+```bash
+set -a; . volume/config/app.env; set +a   # exports CLOUD_API_KEY from the file
+python -m uvicorn backend.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
 ### Frontend dev server (hot-reload)
@@ -199,15 +226,15 @@ CLOUD_API_KEY=replace-with-your-token \
 Requires the backend running separately on port 8080.
 
 ```bash
-cd qa-web-app/frontend
-npm install   # first time only
+cd frontend
+npm ci        # first time only — reproducible install from package-lock.json
 npm run dev   # starts on http://localhost:5173
 ```
 
 ### Build frontend for production
 
 ```bash
-cd qa-web-app/frontend
+cd frontend
 npm run build   # output: frontend/dist/
 ```
 
@@ -246,10 +273,11 @@ docker compose --env-file volume/config/app.env up
 Error: bind: address already in use 127.0.0.1:8080
 ```
 
-Find and stop the process:
+Find what's listening, check it's yours, then stop it:
 
 ```bash
-lsof -ti:8080 | xargs kill
+lsof -nP -iTCP:8080 -sTCP:LISTEN   # shows the PID and command
+kill <PID>                         # kill the PID you identified
 ```
 
 Or change the port:
@@ -267,12 +295,12 @@ QA_WEB_APP_PORT=9090 docker compose --env-file volume/config/app.env up
 Build the frontend:
 
 ```bash
-cd qa-web-app/frontend && npm run build
+cd frontend && npm run build
 ```
 
 Or use `docker compose up --build` to rebuild the image.
 
-### UI loads but data screens fail (502 / empty)
+### UI loads but data screens fail or are empty
 
 Check the health endpoint and verify your API key is configured:
 
@@ -310,7 +338,7 @@ Container paths:
 | File | Why |
 |------|-----|
 | `app.env` | Contains `CLOUD_API_KEY` |
-| `settings.json` | May contain project IDs / paths |
+| `settings.json` | Environment-specific config (and potentially sensitive internal paths) — not a shared default |
 | `ssh_key` | SSH private key for baremetal servers |
 
 All three are in `.gitignore`. Run `git status` before committing to verify.
@@ -330,8 +358,8 @@ All three are in `.gitignore`. Run `git status` before committing to verify.
 | `CLIENT_ID` | Gcore client ID | `130485` |
 | `PROJECT_ID` | Gcore project ID | `309102` |
 | `PROJECT_NAME` | Display name (optional) | — |
-| `SSH_KEY_NAME` | Gcore SSH key name for BM create | `qa-chk-bare` |
-| `IMAGE_NAME` | Baremetal image | `ubuntu-22.04-x64-ironic` |
+| `SSH_KEY_NAME` | Gcore SSH key name for BM create | `qa-ssh-keyname-example` |
+| `IMAGE_NAME` | Baremetal image | `ubuntu-26.04-x64-ironic` |
 | `BASE_URL` | Gcore API base URL | `https://api.gcore.com` |
 
 Merge order: hardcoded defaults → `settings.json` → env vars.
@@ -359,25 +387,11 @@ API key is env-only.
 
 ```bash
 # Backend tests
-cd qa-web-app && python -m pytest -q
+python -m pytest -q
 
 # Frontend build
-cd qa-web-app/frontend && npm run build
+cd frontend && npm run build
 
 # Verify no yarn/pnpm lockfiles
 test ! -f yarn.lock && test ! -f pnpm-lock.yaml && echo "ok"
 ```
-
----
-
-## Implemented screens
-
-| Screen | Status |
-|--------|--------|
-| Regions | Done |
-| Quotas | Done |
-| Settings | Done |
-| New Run | Done |
-| Run Progress | Done (polling via `GET /api/runs`) |
-| Reports | Done |
-| Cleanup | Done |
